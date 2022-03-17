@@ -3,7 +3,7 @@ Install
 ---
 ```
 cp .env.local .env
-cp app/.env.local .env
+cp app/.env.local app/.env
 
 docker-compose build --no-cache
 docker network create testing_network
