@@ -34,7 +34,6 @@ class Player
     private string $name;
 
     #[ORM\Column(type: 'string', length: 255)]
-    #[Assert\NotBlank]
     private string $country;
 
     #[ORM\Column(type: 'datetime')]
@@ -99,17 +98,19 @@ class Player
     }
 
     /**
-     * @param string $position
+     * @param string|null $position
      * @return $this
      * @throws Exception
      */
-    public function setPosition(string $position): self
+    public function setPosition(?string $position): self
     {
         if (!in_array($position, self::POSITIONS)) {
             throw new Exception("Incorrect position");
         }
 
-        $this->position = $position;
+        if (!empty($position)) {
+            $this->position = $position;
+        }
 
         return $this;
     }
@@ -134,7 +135,7 @@ class Player
             'country' => $this->getCountry(),
             'birth_date' => $this->getBirthDate()->format('d.m.Y'),
             'position' => $this->getPosition(),
-            'created_at' => $this->getCreatedAt(),
+            'created_at' => $this->getCreatedAt()->format('d.m.Y H:i:s'),
         ];
     }
 }

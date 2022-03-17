@@ -2,12 +2,14 @@
 
 namespace App\ApiData;
 
+use App\Repository\PlayerRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Exception;
 
 class ApiRequest
 {
     private array $data = [];
+    private array $meta = [];
 
     /**
      * @param Request $request
@@ -15,9 +17,9 @@ class ApiRequest
      */
     public function __construct(Request $request)
     {
-        if (!$request->headers->has("Content-Type")
+        if ($request->getMethod() !== Request::METHOD_GET && (!$request->headers->has("Content-Type")
             || $request->headers->get("Content-Type") != 'application/json'
-        ) {
+        )) {
             throw new Exception("Invalid request");
         }
 
@@ -37,6 +39,10 @@ class ApiRequest
             if (preg_match('/[\'\^£$%&\*\(\)\}\{@#~\?\<\>,\|=\+¬]/u', $item)) {
                 throw new Exception("Bad input format");
             }
+        }
+
+        if (!empty($this->data['page'])) {
+            $this->data['offset'] = $this->data['page'] * PlayerRepository::LIMIT - PlayerRepository::LIMIT;
         }
     }
 

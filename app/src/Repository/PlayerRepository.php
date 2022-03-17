@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\ApiData\ApiRequest;
 use App\Entity\Player;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -36,6 +38,17 @@ class PlayerRepository extends ServiceEntityRepository
         if ($flush) {
             $this->_em->flush();
         }
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     * @throws NoResultException
+     */
+    public function getCount(): int
+    {
+        $qb = $this->createQueryBuilder('p');
+        $qb->select('count(p.id)');
+        return $qb->getQuery()->getSingleScalarResult();
     }
 
     public function findByFilter(ApiRequest $request): array

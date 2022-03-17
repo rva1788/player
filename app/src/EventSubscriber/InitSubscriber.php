@@ -5,6 +5,7 @@ namespace App\EventSubscriber;
 use App\ApiData\ApiRequest;
 use App\Controller\JsonRequestInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ControllerEvent;
 use Exception;
 

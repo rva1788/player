@@ -5,15 +5,16 @@ namespace App\Controller;
 use App\ApiData\ApiRequest;
 use App\ApiData\ApiResponse;
 use App\Entity\Player;
+use App\Meta\Meta;
 use App\Repository\PlayerRepository;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Exception;
-use DateTime;
 
 class PlayerController extends AbstractController implements JsonRequestInterface
 {
@@ -39,7 +40,7 @@ class PlayerController extends AbstractController implements JsonRequestInterfac
             $em->persist($player);
             $em->flush();
 
-            $this->response->setData(['id' => $player->getId()]);
+            $this->response->setData($player->toArray());
         } catch (Exception $exception) {
             $this->response->setError($exception);
         }
@@ -55,10 +56,7 @@ class PlayerController extends AbstractController implements JsonRequestInterfac
 
         $em->beginTransaction();
         try {
-            $player = $playerRepo->findOneBy([
-                'id' => $id
-            ]);
-
+            $player = $playerRepo->findOneBy(['id' => $id]);
             if (empty($player)) {
                 throw new Exception("Player not found");
             }
@@ -90,10 +88,7 @@ class PlayerController extends AbstractController implements JsonRequestInterfac
     public function remove(EntityManagerInterface $em, PlayerRepository $playerRepo, int $id): JsonResponse
     {
         try {
-            $player = $playerRepo->findOneBy([
-                'id' => $id
-            ]);
-
+            $player = $playerRepo->findOneBy(['id' => $id]);
             if (empty($player)) {
                 throw new Exception("Player not found");
             }
@@ -116,15 +111,16 @@ class PlayerController extends AbstractController implements JsonRequestInterfac
     #[Route('/player/{id}', name: 'player_get_one', methods: ['GET'])]
     public function get_one(PlayerRepository $playerRepo, int $id): JsonResponse
     {
-        $player = $playerRepo->findOneBy([
-            'id' => $id
-        ]);
+        try {
+            $player = $playerRepo->findOneBy(['id' => $id]);
+            if (empty($player)) {
+                throw new Exception("Player not found");
+            }
 
-        if (empty($player)) {
-            throw new Exception("Player not found");
+            $this->response->setData($player->toArray());
+        } catch (Exception $exception) {
+            $this->response->setError($exception);
         }
-
-        $this->response->setData($player->toArray());
 
         return $this->response->toJsonResponse();
     }
@@ -134,14 +130,21 @@ class PlayerController extends AbstractController implements JsonRequestInterfac
     {
         /** @var ApiRequest $data */
         $data = $request->attributes->get('json_request');
-        $players = $playerRepo->findByFilter($data);
 
+        $meta = (new Meta())
+            ->setUrl('http://localhost:8181')
+            ->setPerPage(PlayerRepository::LIMIT)
+            ->setTotal($playerRepo->getCount())
+            ->setFilter($data);
+
+        $players = $playerRepo->findByFilter($data);
         /** @var Player $player */
         foreach ($players as $player) {
             $array[] = $player->toArray();
         }
 
         return $this->response
+            ->setMeta($meta)
             ->setData($array ?? [])
             ->toJsonResponse();
     }
